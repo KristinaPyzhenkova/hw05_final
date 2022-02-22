@@ -31,8 +31,10 @@
             <img class="card-img my-2" src="{{ im.url }}">
           {% endthumbnail %}
           <p>{{ post.text }}</p>
-          <a class="btn btn-primary" href="{% url 'posts:post_edit' post_id=post.pk  %}">
-              редактировать запись
+          {% if post.author == user %}
+              <a class="btn btn-primary" href="{% url 'posts:post_edit' post_id=post.pk  %}">
+                редактировать запись
+          {% endif %}
           </a>
         {% include 'posts/add_comments.html' %}
         </article>

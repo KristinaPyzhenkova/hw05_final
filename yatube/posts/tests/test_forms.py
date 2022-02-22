@@ -33,12 +33,6 @@ class PostFormTest(TestCase):
             pub_date='22.02.2022',
             pk=100,
         )
-        # cls.comment = Comment.objects.create(
-        #     author=cls.user,
-        #     pk=100,
-        #     created='23.02.2022',
-        #     text='Test comment',
-        # )
         cls.form = PostForm()
         cls.form = CommentForm()
 

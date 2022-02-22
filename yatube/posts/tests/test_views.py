@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from posts.forms import PostForm
-from posts.models import Post, Group
+from posts.models import Post, Group, Follow, Comment
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -247,6 +247,16 @@ class PostViewsTests(TestCase):
         self.assertIsInstance(form, PostForm)
         self.assertTrue(is_edit)
 
+    def test_cache_index_page(self):
+        """Корректность работы кеша на главной стр."""
+        cache.clear()
+        response = self.authorized_client.get(reverse('posts:index'))
+        cache_check = response.content
+        post = Post.objects.get(pk=100)
+        post.delete()
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(response.content, cache_check)
+
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -290,3 +300,98 @@ class PaginatorViewsTest(TestCase):
                 self.authorized_client.force_login(self.author)
                 response = self.authorized_client.get(reverse_name)
                 self.assertEqual(len(response.context[page_obj]), 10)
+
+
+class FollowPagesTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.unfollower_user = User.objects.create_user(username='unfollower')
+        cls.follower_user = User.objects.create_user(username='follower')
+        cls.author = User.objects.create_user(username='following')
+        cls.follow = Follow.objects.create(
+            user=cls.follower_user,
+            author=cls.author,
+        )
+        cls.post = Post.objects.create(
+            text='Тест',
+            author=cls.author,
+        )
+
+    def setUp(self):
+        self.follower_client = Client()
+        self.follower_client.force_login(self.follower_user)
+        self.unfollower_client = Client()
+        self.unfollower_client.force_login(self.unfollower_user)
+
+    def test_follow_user_posts_in_line(self):
+        """Создаем подписку на автора."""
+        response = self.unfollower_client.get(reverse('posts:follow_index'))
+        follower_post = len(response.context['page_obj'])
+        self.assertEqual(follower_post, 0)
+        Follow.objects.get_or_create(
+            user=self.unfollower_user,
+            author=self.follow.author
+        )
+        response1 = self.unfollower_client.get(reverse('posts:follow_index'))
+        follower_post1 = len(response1.context['page_obj'])
+        self.assertEqual(follower_post1, 1)
+
+    def test_unfollow_user_no_posts_in_line(self):
+        """Удаляем подписку на автора."""
+        response = self.follower_client.get(reverse('posts:follow_index'))
+        follower_post = len(response.context['page_obj'])
+        self.assertEqual(follower_post, 1)
+        Follow.objects.filter(
+            user=self.follower_user,
+            author=self.follow.author
+        ).delete()
+        response1 = self.follower_client.get(reverse('posts:follow_index'))
+        follower_post1 = len(response1.context['page_obj'])
+        self.assertEqual(follower_post1, 0)
+
+
+class CommentPagesTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(username='user')
+        cls.author2 = User.objects.create_user(username='user2')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            description='Тестовое описание',
+            slug='test-slug'
+        )
+        cls.post = Post.objects.create(
+            author=cls.author,
+            group=cls.group,
+            text='Тестовый текст',
+            pub_date='22.02.2022',
+            pk=100,
+        )
+        cls.comment = Comment.objects.create(
+            author=cls.author,
+            text='Комментарий №1',
+            post=cls.post
+        )
+
+    def setUp(self):
+        self.authorized_client1 = Client()
+        self.authorized_client1.force_login(self.author)
+        self.authorized_client2 = Client()
+        self.authorized_client2.force_login(self.author2)
+
+    def test_comment_post_from_authorized_client(self):
+        """Авторизованный пользователь может комментировать посты."""
+        comment_count = Comment.objects.count()
+        form_data_create = {
+            'text': 'Комментарий №2',
+            'post': self.post,
+            'author': self.author2
+        }
+        self.authorized_client2.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
+            data=form_data_create,
+            follow=True
+        )
+        self.assertEqual(Comment.objects.count(), comment_count + 1)

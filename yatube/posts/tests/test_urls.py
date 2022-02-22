@@ -13,7 +13,7 @@ class StaticURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create_user(username='HasNoName')
-        cls.author2 = User.objects.create_user(username='HasNoName2')
+        cls.user = User.objects.create_user(username='HasNoName2')
         cls.group = Group.objects.create(
             title='Тестовый заголовок',
             description='Тестовый текст',
@@ -36,7 +36,8 @@ class StaticURLTests(TestCase):
             reverse('posts:index'): 200,
             reverse('about:tech'): 200,
             reverse('about:author'): 200,
-            reverse('posts:post_create'): 302
+            reverse('posts:post_create'): 302,
+            '/unexisting_page/': 404,
         }
         for address, status_code in url_status_code.items():
             with self.subTest(address=address):
@@ -81,11 +82,11 @@ class StaticURLTests(TestCase):
             response, '/auth/login/?next=/posts/100/edit/'
         )
 
-    def test_urls_edit_redirect(self):
-        """Страница по адресу /posts/../edit/ перенаправит анонимного
-        пользователя на страницу поста.
+    def test_urls_edit_redirect_user2(self):
+        """Страница по адресу /posts/../edit/ перенаправит зарег.
+        пользователя(не автора) на страницу поста.
         """
-        self.authorized_client.force_login(self.author2)
+        self.authorized_client.force_login(self.user)
         response = self.authorized_client.get((reverse(
             'posts:post_edit', kwargs={'post_id': 100}
         )), follow=True)
