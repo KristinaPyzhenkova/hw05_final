@@ -82,7 +82,7 @@ class StaticURLTests(TestCase):
             response, '/auth/login/?next=/posts/100/edit/'
         )
 
-    def test_urls_edit_redirect_user2(self):
+    def test_urls_edit_redirect_registered_user(self):
         """Страница по адресу /posts/../edit/ перенаправит зарег.
         пользователя(не автора) на страницу поста.
         """

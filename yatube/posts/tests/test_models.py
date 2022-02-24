@@ -25,9 +25,7 @@ class PostModelTest(TestCase):
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         text = PostModelTest.post.text[:15]
-        title = PostModelTest.group.title
         self.assertEqual(text, 'Number of value')
-        self.assertEqual(title, self.group.title)
 
     def test_verbose_name(self):
         """verbose_name в полях совпадает с ожидаемым."""

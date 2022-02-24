@@ -89,7 +89,7 @@ class PostViewsTests(TestCase):
         self.assertEqual(group.title, 'Тестовая группа')
 
     def test_view_create_correct_on_main(self):
-        """Корректное отображение созданного поста на главной странице. """
+        """Корректное отображение созданного поста на главной странице."""
         form_data_create = {
             'text': 'Test #2',
             'group': self.group.id
@@ -326,29 +326,40 @@ class FollowPagesTests(TestCase):
 
     def test_follow_user_posts_in_line(self):
         """Создаем подписку на автора."""
-        response = self.unfollower_client.get(reverse('posts:follow_index'))
-        follower_post = len(response.context['page_obj'])
-        self.assertEqual(follower_post, 0)
-        Follow.objects.get_or_create(
-            user=self.unfollower_user,
-            author=self.follow.author
+        self.unfollower_client.get(
+            reverse('posts:profile_follow', kwargs={'username': self.author})
         )
-        response1 = self.unfollower_client.get(reverse('posts:follow_index'))
-        follower_post1 = len(response1.context['page_obj'])
-        self.assertEqual(follower_post1, 1)
+        self.assertTrue(Follow.objects.filter(
+            user=self.unfollower_user,
+            author=self.author,
+        ).exists())
 
     def test_unfollow_user_no_posts_in_line(self):
         """Удаляем подписку на автора."""
+        Follow.objects.create(user=self.follower_user, author=self.author)
+        self.assertTrue(Follow.objects.filter(
+            user=self.follower_user, author=self.author
+        ).exists())
+        self.follower_client.get(
+            reverse('posts:profile_unfollow', kwargs={'username': self.author})
+        )
+        self.assertFalse(Follow.objects.filter(
+            user=self.follower_user, author=self.author
+        ))
+
+    def test_follow_user_posts_in_line(self):
+        """Новая запись пользователя появляется в ленте тех,
+        кто подписан на этого пользователя."""
         response = self.follower_client.get(reverse('posts:follow_index'))
         follower_post = len(response.context['page_obj'])
         self.assertEqual(follower_post, 1)
-        Follow.objects.filter(
-            user=self.follower_user,
-            author=self.follow.author
-        ).delete()
-        response1 = self.follower_client.get(reverse('posts:follow_index'))
-        follower_post1 = len(response1.context['page_obj'])
-        self.assertEqual(follower_post1, 0)
+
+    def test_unfollow_user_no_posts_in_line(self):
+        """Новая запись пользователя не появляется в ленте тех,
+        кто не подписан на этого пользователя."""
+        response = self.unfollower_client.get(reverse('posts:follow_index'))
+        post = Post.objects.get(id=self.post.pk)
+        self.assertNotIn(post, response.context['page_obj'])
 
 
 class CommentPagesTests(TestCase):
@@ -356,7 +367,7 @@ class CommentPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create_user(username='user')
-        cls.author2 = User.objects.create_user(username='user2')
+        cls.author_2 = User.objects.create_user(username='user2')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             description='Тестовое описание',
@@ -376,10 +387,10 @@ class CommentPagesTests(TestCase):
         )
 
     def setUp(self):
-        self.authorized_client1 = Client()
-        self.authorized_client1.force_login(self.author)
-        self.authorized_client2 = Client()
-        self.authorized_client2.force_login(self.author2)
+        self.authorized_client_1 = Client()
+        self.authorized_client_1.force_login(self.author)
+        self.authorized_client_2 = Client()
+        self.authorized_client_2.force_login(self.author_2)
 
     def test_comment_post_from_authorized_client(self):
         """Авторизованный пользователь может комментировать посты."""
@@ -387,9 +398,9 @@ class CommentPagesTests(TestCase):
         form_data_create = {
             'text': 'Комментарий №2',
             'post': self.post,
-            'author': self.author2
+            'author': self.author_2
         }
-        self.authorized_client2.post(
+        self.authorized_client_2.post(
             reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
             data=form_data_create,
             follow=True
