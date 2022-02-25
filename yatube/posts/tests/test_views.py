@@ -324,7 +324,7 @@ class FollowPagesTests(TestCase):
         self.unfollower_client = Client()
         self.unfollower_client.force_login(self.unfollower_user)
 
-    def test_follow_user_posts_in_line(self):
+    def test_create_on_author_subscription(self):
         """Создаем подписку на автора."""
         self.unfollower_client.get(
             reverse('posts:profile_follow', kwargs={'username': self.author})
@@ -334,7 +334,7 @@ class FollowPagesTests(TestCase):
             author=self.author,
         ).exists())
 
-    def test_unfollow_user_no_posts_in_line(self):
+    def test_remove_author_subscription(self):
         """Удаляем подписку на автора."""
         Follow.objects.create(user=self.follower_user, author=self.author)
         self.assertTrue(Follow.objects.filter(
@@ -345,7 +345,7 @@ class FollowPagesTests(TestCase):
         )
         self.assertFalse(Follow.objects.filter(
             user=self.follower_user, author=self.author
-        ))
+        ).exists())
 
     def test_follow_user_posts_in_line(self):
         """Новая запись пользователя появляется в ленте тех,
