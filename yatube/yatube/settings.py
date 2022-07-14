@@ -98,7 +98,7 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'posts:index'
 
-CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+# CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 MEDIA_URL = '/media/'
 
