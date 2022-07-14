@@ -12,6 +12,7 @@ source env/bin/activate
 
 Установить зависимости из файла requirements.txt:
 pip install -r requirements.txt
+python3 -m pip install --upgrade pip
 
 Выполнить миграции: 
 python3 manage.py migrate
