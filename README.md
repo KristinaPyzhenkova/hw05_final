@@ -1,3 +1,20 @@
-# hw05_final
+# Социальная сеть "Yatube"
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+###Описание проекта.
+Данная социальная сеть позволяет пользователю создавать посты и через комментарии - узнавать, что другие пользователи думают о написанном ими. "Подписывтаься" на других пользователей и следить за их публикациями, а если не хочется подписываться - следить анонимно, оставлять свое мнение под чужими постами и много другое.
+Данный проект является учебным. Одна из целей при реализации проетка - изучение библиотеки Django.
+
+###Как запустить проект:
+
+Cоздать и активировать виртуальное окружение:
+python3 -m venv env
+source env/bin/activate
+
+Установить зависимости из файла requirements.txt:
+pip install -r requirements.txt
+
+Выполнить миграции:
+python3 manage.py migrate
+
+Запустить проект:
+python3 manage.py runserver
